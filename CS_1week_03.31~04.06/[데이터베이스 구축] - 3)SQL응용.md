@@ -496,3 +496,246 @@
   ```
 
   
+
+
+
+## 6. SELECT- 2
+
++ **그룹함수**: GROUP BY절에 지정된 그룹별로 속성의 값을 집계할 함수를 기술한다.
++ **WINDOW함수**: GROUP BY절을 이용하지 않고 속성의 값을 집계할 함수를 기술한다.
+  + PARTITION BY: WINDOW함수가 적용될 범위로 사용할 속성을 지정한다.
+  + ORDER BY: PARTITION 안에서 정렬 기준으로 사용할 속성을 지정한다.
++ **GROUP BY절**: 특정 속성을 기준으로 그룹화하여 검색할 때 사용한다. 일반적으로 GROUP BY절은 그룹 함수와 함께 사용된다.
++ **HAVING절**: GROUP BY와 함께 사용되며, 그룹에 대한 조건을 지정한다.
+
+### 6.1 WINDOW 함수 이용 검색
+
++ '상여금' 테이블에서 '상여내역'별로 '상여금'에 대한 일련 번호를 구하시오. (단, 순서는 내림차순이며 속성명은 'NO'로 할 것)
+
++ ```sql
+  SELECT 상여내역, 상여금, ROW_NUMBER() OVER (PARTITION BY 상여내역 ORDER BY 상여금 DESC) AS NO FROM 상여금;
+  ```
+
++ ROW_NUMBER(): 윈도우별로 각 레코드에 대한 일련 번호를 반환
+
++ RANK(): 윈도우별로 순위를 반환하며, 공동 순위를 반영
+
++ DENSE_RANK(): 순위를 반환, 공동 순위 무시
+
+
+
+
+
+### 6.2 GROUP BY
+
++ '상여금' 테이블에서 '부서'별 '상여금'의 평균
+
++ ```sql
+  SELECT 부서, AVG(상여금) AS 평균 FROM 상여금 GROUP BY 부서;
+  ```
+
++ '상여금' 테이블에서 '상여금'이 100 이상인 사원 2명 이상인 '부서'의 튜플 수
+
++ ```sql
+  SELECT 부서, COUNT(*) AS 사원수 FROM 상여금 WHERE 상여금>=100 GROUP BY 부서 HAVING COUNT(*)>=2;
+  ```
+
++ '상여금' 테이블의 '부서', '상여내역', 그리고 '상여금'에 대해 부서별 상여내역별 소계와 전체 합계를 구하시오.(단, 속성명은 '상여금합계'로 하고, ROLLUP함수를 사용할 것)
+
++ ```sql
+  SELECT 부서, 상여내역, SUM(상여금) AS 상여금합계 FROM 상여금 GROUP BY ROLLUP(부서, 상여내역)
+  ```
+
+  + CUBE함수도 비슷하게 쓴다.
+
+
+
+
+
+### 6.4 집합 연산자를 이용한 통합 질의
+
++ 집합 연산자를 사용하여 2개 이상의 테이블의 데이터를 하나로 통합한다.
+
++ ```sql
+  SELECT 속성명, ...
+  FROM 테이블명
+  UNION | UNION ALL | INTERSECT | EXCEPT
+  SELECT 속성명, ...
+  FROM 테이블명
+  [ORDER BY 속성명 [ASC | DESC]];
+  ```
+
+  + 두 개의 SELECT문에 기술한 속성들은 개수와 데이터 유형이 서로 동일해야 한다.
+
++ **UNION**(합집합)
+
+  + 두 SELECT문의 조회 결과를 통합하여 모두 출력한다.
+  + 중복된 행은 한 번만 출력한다.
+
++ **UNION ALL**(합집합)
+
+  + 두 SELECT문의 조회 결과를 통합하여 모두 출력한다.
+  + 중복된 행도 그대로 출력한다.
+
++ **INTERSECT**(교집합)
+
+  + 두 SELECT문의 조회 결과 중 공통된 행만 출력한다.
+
++ **EXCEPT**(차집합)
+
+  + 첫 번째 SELECT문의 조회 결과에서 두 번째 SELECT문의 조회 결과를 제외한 행을 출력한다.
+
+
+
+
+
+
+
+## 7. DML - JOIN
+
+### 7.1 JOIN의 개념
+
++ 2개의 테이블에 대해 연관된 튜플들을 결합하여, 하나의 새로운 릴레이션을 반환
+  + INNER JOIN과 OUTER JOIN으로 구분
+  + 일반적으로 FROM절에 기술
+
+
+
+
+
+### 7.2 INNER JOIN
+
++ **EQUI JOIN**
+
+  + JOIN 대상 테이블에서 공통 속성을 기준으로 '='비교에 의해 같은 값을 가지는 행을 연결하여 결과를 생성하는 JOIN 방법
+
+  + 조건이 '='일 때 동일한 속성이 두 번 나타나게 되는데, 중복된 속성을 제거해 같은 속성을 한 번만 표기하는 방법을 **NATURAL JOIN**이라고 한다.
+
+  + 연결 고리가 되는 공통 속성을 JOIN 속성이라고 한다.
+
+  + ```sql
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명, ...
+    WHERE 테이블명1.속성명 = 테이블명2.속성명;
+    ```
+
+  + ```sql
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명1 NATURAL JOIN 테이블명2;
+    ```
+
+  + ```sql
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명1 JOIN 테이블명2 USING(속성명);
+    ```
+
+  + '학생' 테이블과 '학과' 테이블에서 '학과코드'의 값이 같은 튜플을 JOIN하여 '학번', '이름', '학과코드', '학과명'을 출력하는 sql문
+
+    + ```sql
+      SELECT 학번, 이름, 학생.학과코드, 학과명
+      FROM 학생, 학과
+      WHERE 학생.학과코드 = 학과.학과코드;
+      
+      SELECT 학번, 이름, 학생.학과코드, 학과명
+      FROM 학생 NATURAL JOIN 학과;
+      
+      SELECT 학번, 이름, 학생.학과코드, 학과명
+      FROM 학생 JOIN 학과 USING(학과코드);
+      ```
+
+
+
++ **NON-EQUI JOIN**
+
+  + JOIN 조건에 '='조건이 아닌 나머지 비교 연산자 >, <, <>, >=, <=를 사용하는 JOIN
+
+  + ```sql
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명1, 테이블명2, ...
+    WHERE (NON-EQUI JOIN 조건);
+    ```
+
+  + ```sql
+    SELECT 학번, 이름, 성적, 등급
+    FROM 학생, 성적등급
+    WHERE 학생.성적 BETWEEN 성적등급.최저 AND 성적등급.최고;
+    ```
+
+
+
+
+
+### 7.3 OUTER JOIN
+
++ 릴레이션에서 JOIN 조건에 만족하지 않는 튜플도 결과로 출력하기 위한 JOIN방법으로, LEFT OUTER JOIN, RIGHT OUTER JOIN, FULL OUTER JOIN이 있다.
+
+
+
++ **LEFT OUTER JOIN**
+
+  + INNER JOIN의 결과를 구한 후, 우측 항 릴레이션의 어떤 튜플과도 맞지 않는 좌측 항의 릴레이션에 있는 튜플들에 **NULL값을 붙여서** INNER JOIN의 결과에 추가
+
+  + ```sql
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명1 LEFT OUTER JOIN 테이블명2
+    ON 테이블명1.속성명 = 테이블명2.속성명;
+    
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명1, 테이블명2
+    WHERE 테이블명1.속성명 = 테이블명2.속성명(+);
+    ```
+
+
+
++ **RIGHT OUTER JOIN**
+
+  + LEFT의 반대
+
+  + ```sql
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명1 RIGHT OUTER JOIN 테이블명2
+    ON 테이블명1.속성명 = 테이블명2.속성명;
+    
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명1, 테이블명2
+    WHERE 테이블명1.속성명(+) = 테이블명2.속성명;
+    ```
+
+
+
+
++ **FULL OUTER JOIN**
+
+  + LEFT + RIGHT
+
+  + ```sql
+    SELECT [테이블명.]속성명, ...
+    FROM 테이블명1 FULL OUTER JOIN 테이블명2
+    ON 테이블명1.속성명 = 테이블명2.속성명;
+    ```
+
+
+
+
+
+### 7.4 SELF JOIN
+
++ 같은 테이블에서 2개의 속성을 연결하여 EQUI JOIN을 하는 방법
+
++ ```sql
+  SELECT [별칭1.]속성명, [별칭1.]속성명, ...
+  FROM 테이블명1 [AS] 별칭1 JOIN 테이블명1 [AS] 별칭2
+  ON 별칭1.속성명 = 별칭2.속성명;
+  
+  SELECT [별칭1.]속성명, [별칭1.]속성명, ...
+  FROM 테이블명1 [AS] 별칭1, 테이블명1 [AS] 별칭2
+  WHERE 별칭1.속성명 = 별칭2.속성명;
+  ```
+
++ '학생' 테이블을 SELF JOIN하여 선배가 있는 학생과 선배의 '이름'을 표시하는 sql문
+
++ ```sql
+  SELECT A.학번, A.이름, B.이름 AS 선배
+  FROM 학생 A JOIN 학생 B
+  ON A.선배 = B.학번;
+  ```
